@@ -1,13 +1,37 @@
 big thanks to https://github.com/aenemapy/aenemapyrepo
 
 # Introduction
-self usage only.
-
-modify the skipintro to suite my needs
+modify the skipintro to suite my own needs  
 compared to origin version, changes:
 - default to disable the addon
 - remove update and disable button, only a clean skip button
 - button can hide itself after into
+
+# Usage
+When you play a TV show episode, a new entry will be created in skipintro.json in your kodi profile addon folder.
+e.g. if you are using Shield TV, location will be: \internal\Android\data\org.xbmc.kodi\files\.kodi\userdata\addon_data\script.tvskipintro\skipintro.json
+```
+[
+  {
+    "title": "default",
+    "service": false,
+    "skip": "45",
+    "start": 0
+  }
+  {
+    "title": "Rick and Morty",
+    "service": false,
+    "skip": "45",
+    "start": 0
+  }
+]
+```
+update the "service" key to true
+update the "start" key to intro length in seconds
+
+Then you are good to go.
+Click Skip button will skip to the start position of your setting
+If you do not do anything, on (start - 5) the skip button will disappear
 
 # todo
 - [ ] edl file support, so it can auto skip or promote skip according to edl file content, tvshow or movie
