@@ -25,34 +25,6 @@
 				<texturefocus>button-fo.png</texturefocus>				
 				<textoffsetx>10</textoffsetx>
 			</control>
-			<control type="button" id="202">
-				<top>50</top>
-				<description>Never Button</description>
-				<width>200</width>
-				<height>40</height>
-				<align>left</align>
-				<aligny>center</aligny>
-				<label>New Value</label>
-				<textcolor>FFFFFFFF</textcolor>
-				<texturenofocus>button-nofo.png</texturenofocus>
-				<texturefocus>button-fo.png</texturefocus>				
-				<font>font12_title</font>
-				<textoffsetx>10</textoffsetx>
-			</control>
-			<control type="button" id="210">
-				<top>100</top>
-				<description>Never Button</description>
-				<width>200</width>
-				<height>40</height>
-				<align>left</align>
-				<aligny>center</aligny>
-				<label>Disable This Show</label>
-				<textcolor>FFFFFFFF</textcolor>
-				<texturenofocus>button-nofo.png</texturenofocus>
-				<texturefocus>button-fo.png</texturefocus>				
-				<font>font12_title</font>
-				<textoffsetx>10</textoffsetx>
-			</control>
 		</control>
 	</controls>
 </window>

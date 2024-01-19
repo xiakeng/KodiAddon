@@ -18,13 +18,13 @@
     along with this program.  If not, see .
 '''
 
-import xbmcvfs,xbmc,xbmcaddon,json,os,xbmcgui, time, re
+import xbmcvfs,xbmc,xbmcaddon,json,os,xbmcgui, time, re,threading
 
 KODI_VERSION = int(xbmc.getInfoLabel("System.BuildVersion").split(".")[0])
 addonInfo = xbmcaddon.Addon().getAddonInfo
 settings = xbmcaddon.Addon().getSetting
-profilePath = xbmc.translatePath(addonInfo('profile'))
-addonPath = xbmc.translatePath(addonInfo('path'))
+profilePath = xbmcvfs.translatePath(addonInfo('profile'))
+addonPath = xbmcvfs.translatePath(addonInfo('path'))
 skipFile = os.path.join(profilePath, 'skipintro.json')
 defaultSkip = settings('default.skip')
 if not os.path.exists(profilePath): xbmcvfs.mkdir(profilePath)
@@ -52,7 +52,7 @@ def updateSkip(title, seconds=defaultSkip, start=0, service=True):
         
 def newskip(title, seconds, start=0):
     if seconds == '' or seconds == None: seconds = defaultSkip
-    newIntro = {'title': title, 'service': True, 'skip': seconds, 'start': start}
+    newIntro = {'title': title, 'service': False, 'skip': seconds, 'start': start}
     try:
         with open(skipFile) as f:
             data = json.load(f)
@@ -100,64 +100,62 @@ class Service():
 
     def __init__(self, *args):
         addonName = 'Skip Player'
-        self.skipped = False
+        self.dialogDisplayed = False
 
 
 
     def ServiceEntryPoint(self):
         monitor = xbmc.Monitor()
 
-
         while not monitor.abortRequested():
             # check every 5 sec
-            if monitor.waitForAbort(5):
+            if monitor.waitForAbort(1):
                 # Abort was requested while waiting. We should exit
                 break
             if xbmc.Player().isPlaying():
                 try:
                     playTime = xbmc.Player().getTime()
 
-                    totalTime = xbmc.Player().getTotalTime()
-
                     self.currentShow = xbmc.getInfoLabel("VideoPlayer.TVShowTitle")
                     if self.currentShow: 
-                        
-                        if playTime > 250: self.skipped = True
-                        if self.skipped == False: self.SkipIntro(self.currentShow)
-                    print(("CURRENT SHOW PLAYER", currentShow, playTime))
+                        status = checkService(self.currentShow)
+
+                        if status == True:
+                            skipValue = int(getSkip(self.currentShow))
+                            if playTime >= skipValue - 5: 
+                                self.dialogDisplayed = False
+                            if self.dialogDisplayed == False and playTime < skipValue - 5: 
+                                self.SkipIntro(self.currentShow)
                 except:pass
-            else: self.skipped = False
+            else: 
+                self.dialogDisplayed = False
                 
     def SkipIntro(self, tvshow):
         try:
-            if not xbmc.Player().isPlayingVideo(): raise Exception() 
+
+            if not xbmc.Player().isPlayingVideo(): 
+                raise Exception() 
             
-            time.sleep(2)
+            time.sleep(1)
             timeNow = xbmc.Player().getTime()
-            status = checkService(tvshow)
-            
-            if status == False:
-                self.skipped = True
-                raise Exception()
+
             startTime = checkStartTime(tvshow)
             
-            if int(startTime) >= int(timeNow): raise Exception()
+            if int(startTime) >= int(timeNow): 
+                raise Exception()
             
+            self.dialogDisplayed = True
             Dialog = CustomDialog('script-dialog.xml', addonPath, show=tvshow)
             Dialog.doModal()
-            self.skipped = True
-            del Dialog  
+            del Dialog
             
-        except:pass
+        except Exception as err:
+            pass
 
 OK_BUTTON = 201
 NEW_BUTTON = 202
-DISABLE_BUTTON = 210
 ACTION_PREVIOUS_MENU = 10
 ACTION_BACK = 92
-INSTRUCTION_LABEL = 203
-AUTHCODE_LABEL = 204
-WARNING_LABEL = 205
 CENTER_Y = 6
 CENTER_X = 2
 
@@ -167,11 +165,16 @@ class CustomDialog(xbmcgui.WindowXMLDialog):
         self.tvshow = show
 
     def onInit(self):
-        instuction = ''
         self.skipValue = int(getSkip(self.tvshow))
-        skipLabel = 'SKIP INTRO: %s' % self.skipValue
+
+        skipLabel = 'SKIP INTRO'
         skipButton = self.getControl(OK_BUTTON)
         skipButton.setLabel(skipLabel)
+
+        threading.Timer(self.skipValue - 5, self.closeDialog).start()
+
+    def closeDialog(self):
+        self.close()
         
     def onAction(self, action):
         if action == ACTION_PREVIOUS_MENU or action == ACTION_BACK:
@@ -188,7 +191,7 @@ class CustomDialog(xbmcgui.WindowXMLDialog):
 
         if control == OK_BUTTON:
             timeNow = xbmc.Player().getTime()
-            skipTotal = int(timeNow) + int(self.skipValue)
+            skipTotal = int(self.skipValue)
             xbmc.Player().seekTime(int(skipTotal))          
 
         if control == NEW_BUTTON:
@@ -199,13 +202,7 @@ class CustomDialog(xbmcgui.WindowXMLDialog):
             if d2 == '' or d2 == None: d2 = 0
             if str(d) != '' and str(d) != '0': newskip(self.tvshow , d , start=d2)
 
-                    
-            
-        if control == DISABLE_BUTTON:
-            updateSkip(self.tvshow, seconds=self.skipValue, service=False)
-            
-
-        if control in [OK_BUTTON, NEW_BUTTON, DISABLE_BUTTON]:
+        if control in [OK_BUTTON, NEW_BUTTON]:
             self.close()
             
 Service().ServiceEntryPoint()
